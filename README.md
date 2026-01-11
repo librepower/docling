@@ -1,10 +1,26 @@
 # LibrePower Docling
 
-Document AI for IBM Power and Linux - powered by IBM's Docling framework.
+**LibrePower - Unlocking Power Systems through open source. Unmatched RAS and TCO. Minimal footprint.**
+
+Document AI for AIX, IBM i, and Linux on Power - powered by IBM's Docling framework.
+
+> **Early Release**: These packages are provided as-is for testing and evaluation. While we use them in production, bugs may exist.
+
+---
+
+## Join the Community
+
+LibrePower is more than AIX—we're building open source support across the entire IBM Power ecosystem: AIX, IBM i, and Linux on Power (ppc64le).
+
+**[Subscribe to our newsletter](https://librepower.substack.com/subscribe)** for releases, technical articles, and community updates.
+
+**[librepower.org](https://librepower.substack.com/subscribe)** — Launching February 2026
+
+---
 
 ## Overview
 
-LibrePower Docling brings enterprise document intelligence to IBM Power systems (AIX) and Linux. Process PDFs, extract text and tables, and build document AI applications - all on-premise with your existing infrastructure.
+LibrePower Docling brings enterprise document intelligence to IBM Power systems. Process PDFs, extract text and tables, and build document AI applications - all on-premise with your existing infrastructure.
 
 ## Features
 
@@ -12,7 +28,7 @@ LibrePower Docling brings enterprise document intelligence to IBM Power systems 
 - **AI-Powered**: HuggingFace transformers and tokenizers for NLP
 - **Multi-Platform**: Works on AIX (IBM Power) and Ubuntu Linux
 - **On-Premise**: Data stays in-house - no cloud dependency
-- **Power Optimized**: Ready for Power10/11 MMA acceleration
+- **Power Optimized**: Compiled for POWER9+ (runs on POWER9, POWER10, POWER11)
 
 ## Quick Start
 
@@ -35,8 +51,8 @@ cd docling
 
 | Platform | Status | Notes |
 |----------|--------|-------|
-| AIX 7.3+ | ✓ Supported | IBM Power, requires AIX Toolbox |
-| Ubuntu 22.04+ | ✓ Supported | x86_64 and ppc64le |
+| AIX 7.3+ | Supported | IBM Power, requires AIX Toolbox |
+| Ubuntu 22.04+ | Supported | x86_64 and ppc64le |
 | RHEL 9+ | Planned | Coming soon |
 | macOS | Dev only | For development/testing |
 
@@ -93,7 +109,7 @@ system.ingest_directory("/path/to/pdfs")
 results = system.search("What are the AI capabilities?")
 ```
 
-## Pre-built Wheels (POWER9 Optimized)
+## Pre-built Wheels (POWER9+ Optimized)
 
 Pre-compiled wheels for AIX ppc64 are included in `wheels/aix/`:
 
@@ -106,6 +122,16 @@ Pre-compiled wheels for AIX ppc64 are included in `wheels/aix/`:
 | libopenblas | 0.3.28 | 17 MB | **POWER9 BLAS library** |
 
 **Note**: OpenBLAS POWER9 was compiled specifically for this project - it did not exist for AIX before.
+
+### POWER9/10/11 Compatibility
+
+These wheels are compiled with `-mcpu=power9` which provides:
+
+- **Runs on POWER9, POWER10, POWER11** - Full binary compatibility
+- **VSX vector extensions** - SIMD acceleration for math operations
+- **Major jump from POWER7** - Significant performance improvement over default AIX binaries
+
+POWER10/11 systems will run these binaries but won't utilize MMA (Matrix Math Accelerator). Future releases may include `-mcpu=power10` wheels for maximum P10/P11 performance.
 
 ## Benchmarks (AIX vs Ubuntu ppc64le)
 
@@ -124,7 +150,7 @@ AIX excels at PDF processing and multiprocessing workloads.
 librepower-docling/
 ├── install.sh           # Universal installer (platform detection)
 ├── wheels/
-│   └── aix/             # Pre-built AIX wheels (POWER9)
+│   └── aix/             # Pre-built AIX wheels (POWER9+)
 ├── lib/
 │   ├── aix/             # AIX-specific components
 │   │   ├── install.sh   # AIX installer
@@ -151,14 +177,15 @@ The IBM Rust SDK generates XCOFF binaries with a loader relocation bug. The inst
 
 ### Known Issues
 - docling-parse may segfault during cleanup (use `os._exit(0)` workaround)
+- sklearn has import issues on AIX (investigating)
 - Some packages may have version metadata mismatches
 
-## Power10 MMA Acceleration
+## Power10/11 MMA Acceleration
 
 For Power10/11 systems with Matrix Math Accelerator:
 
-1. Ensure ONNX Runtime is compiled with MMA support
-2. sentence-transformers will automatically use optimized kernels
+1. Current POWER9 wheels run but don't use MMA
+2. Future `-mcpu=power10` wheels will enable MMA for NumPy/SciPy
 3. Monitor utilization: `lparstat -E | grep MMA`
 
 ## Contributing
@@ -189,5 +216,7 @@ GPL-3.0 - See LICENSE file
 - LibrePower Community
 
 ---
-*LibrePower - Open Source Software for IBM Power*
-*[librepower.org](https://librepower.org)*
+
+*LibrePower - Unlocking Power Systems through open source*
+
+*[librepower.org](https://librepower.org)* | *[Newsletter](https://librepower.substack.com/subscribe)* | *[GitLab](https://gitlab.com/librepower)*
