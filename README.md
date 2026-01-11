@@ -112,29 +112,67 @@ system.ingest_directory("/path/to/pdfs")
 results = system.search("What are the AI capabilities?")
 ```
 
-## Pre-built Wheels (POWER9+ Optimized)
+## Pre-built Wheels
 
-Pre-compiled wheels for AIX ppc64 are included in `wheels/aix/`:
+Pre-compiled wheels for AIX ppc64 are included in `wheels/aix/`.
 
-| Package | Version | Size | Notes |
-|---------|---------|------|-------|
-| numpy | 2.4.1 | 7.6 MB | `-mcpu=power9 -mtune=power9 -mvsx` |
-| scipy | 1.17.0 | 32 MB | POWER9 optimized |
-| hnswlib | 0.8.0 | 3.0 MB | Vector search |
-| annoy | 1.17.3 | 100 KB | Approximate nearest neighbors |
-| libopenblas | 0.3.28 | 17 MB | **POWER9 BLAS library** |
+### POWER9 Wheels (Default - Compatible with P9/P10/P11)
+
+Located in `wheels/aix/`:
+
+| Package | Version | Size | Compiler Flags |
+|---------|---------|------|----------------|
+| numpy | 2.4.1 | 7.9 MB | `-mcpu=power9 -mtune=power9 -mvsx` |
+| scipy | 1.17.0 | 33 MB | `-mcpu=power9 -mtune=power9` |
+| scikit-learn | 1.8.0 | 10 MB | `-mcpu=power9` |
+| hnswlib | 0.8.0 | 3.1 MB | `-mcpu=power9 -O3` |
+| annoy | 1.17.3 | 102 KB | `-mcpu=power9` |
+| libopenblas | 0.3.28 | 18 MB | **POWER9 BLAS library** |
+
+### POWER10 Wheels (Optimized for P10/P11)
+
+Located in `wheels/aix/power10/`:
+
+| Package | Version | Size | Compiler Flags |
+|---------|---------|------|----------------|
+| numpy | 2.4.1 | 7.9 MB | `-mcpu=power10 -mtune=power10 -O3` |
+| hnswlib | 0.8.0 | 438 KB | `-mcpu=power10 -mtune=power10 -O3` |
+| scipy | 1.17.0 | 33 MB | P9 fallback* |
+| scikit-learn | 1.8.0 | 10 MB | P9 fallback* |
+| annoy | 1.17.3 | 102 KB | P9 fallback* |
+
+*Some packages use POWER9 wheels as fallback (compilation issues with -mcpu=power10)
 
 **Note**: OpenBLAS POWER9 was compiled specifically for this project - it did not exist for AIX before.
 
+### Processor Auto-Detection
+
+The installer automatically detects your processor:
+
+```bash
+./install.sh              # Auto-detects P9/P10/P11
+./install.sh --power9     # Force POWER9 wheels
+./install.sh --power10    # Force POWER10 wheels (P10/P11 only)
+```
+
+If POWER10 wheels fail to install, the installer automatically falls back to POWER9 wheels.
+
 ### POWER9/10/11 Compatibility
 
-These wheels are compiled with `-mcpu=power9` which provides:
+| Processor | POWER9 Wheels | POWER10 Wheels |
+|-----------|---------------|----------------|
+| POWER9 | ✅ Native | ❌ Won't run |
+| POWER10 | ✅ Compatible | ✅ Native + MMA potential |
+| POWER11 | ✅ Compatible | ✅ Native + MMA potential |
 
-- **Runs on POWER9, POWER10, POWER11** - Full binary compatibility
-- **VSX vector extensions** - SIMD acceleration for math operations
-- **Major jump from POWER7** - Significant performance improvement over default AIX binaries
+**POWER9 wheels** provide:
+- Full binary compatibility across P9/P10/P11
+- VSX vector extensions for SIMD acceleration
+- Major performance improvement over POWER7 binaries
 
-POWER10/11 systems will run these binaries but won't utilize MMA (Matrix Math Accelerator). Future releases may include `-mcpu=power10` wheels for maximum P10/P11 performance.
+**POWER10 wheels** additionally enable:
+- MMA (Matrix Math Accelerator) potential for future NumPy/SciPy optimizations
+- Native instruction scheduling for P10/P11 microarchitecture
 
 ## Benchmarks
 
@@ -151,21 +189,27 @@ Performance comparison on **POWER9** (same hardware, 12 threads):
 
 ```
 librepower-docling/
-├── install.sh           # Universal installer (platform detection)
+├── install.sh           # Universal installer (auto-detects P9/P10/P11)
 ├── wheels/
-│   └── aix/             # Pre-built AIX wheels (POWER9+)
+│   └── aix/             # POWER9 wheels (default)
+│       ├── numpy-2.4.1-cp312-cp312-aix_ppc64.whl
+│       ├── scipy-1.17.0-cp312-cp312-aix_ppc64.whl
+│       ├── ...
+│       └── power10/     # POWER10 optimized wheels
+│           ├── numpy-2.4.1-cp312-cp312-aix_ppc64.whl
+│           └── hnswlib-0.8.0-cp312-cp312-aix_ppc64.whl
 ├── lib/
-│   ├── aix/             # AIX-specific components
-│   │   ├── install.sh   # AIX installer
+│   ├── aix/
+│   │   ├── install.sh   # AIX installer with P9/P10 support
 │   │   ├── patches/     # XCOFF binary patches
 │   │   └── shims/       # Compatibility shims
-│   └── ubuntu/          # Ubuntu-specific components
+│   └── ubuntu/
 │       └── install.sh   # Ubuntu installer
 ├── examples/
-│   ├── quick_start.py   # Basic usage example
+│   ├── quick_start.py   # Basic usage
 │   └── rag_demo.py      # Enterprise RAG system
 └── docs/
-    └── SETUP_GUIDE.md   # Detailed setup guide
+    └── SETUP_GUIDE.md
 ```
 
 ## AIX-Specific Notes
@@ -182,14 +226,6 @@ The IBM Rust SDK generates XCOFF binaries with a loader relocation bug. The inst
 - docling-parse may segfault during cleanup (use `os._exit(0)` workaround)
 - sklearn has import issues on AIX (investigating)
 - Some packages may have version metadata mismatches
-
-## Power10/11 MMA Acceleration
-
-For Power10/11 systems with Matrix Math Accelerator:
-
-1. Current POWER9 wheels run but don't use MMA
-2. Future `-mcpu=power10` wheels will enable MMA for NumPy/SciPy
-3. Monitor utilization: `lparstat -E | grep MMA`
 
 ## Contributing
 
