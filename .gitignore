@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Keep our pre-built wheels and libs
+!wheels/
+!wheels/**
+!*.whl
+!libopenblas*.so
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.tar.gz
+*.rpm
+/rpmbuild/
+
+# Temp files
+/tmp/
+*.log
+*.bak
+*.orig
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Docs build
+docs/_build/
