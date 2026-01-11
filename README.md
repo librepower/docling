@@ -24,11 +24,11 @@ LibrePower Docling brings enterprise document intelligence to IBM Power systems.
 
 ## Features
 
-- **PDF Processing**: Extract text, tables, and document structure
-- **AI-Powered**: HuggingFace transformers and tokenizers for NLP
-- **Multi-Platform**: Works on AIX (IBM Power) and Ubuntu Linux
-- **On-Premise**: Data stays in-house - no cloud dependency
-- **Power Optimized**: Compiled for POWER9+ (runs on POWER9, POWER10, POWER11)
+- 📄 **PDF Processing**: Extract text, tables, and document structure
+- 🤖 **AI-Powered**: HuggingFace transformers and tokenizers for NLP
+- 🖥️ **Multi-Platform**: Works on AIX (IBM Power) and Ubuntu Linux ppc64le
+- 🔒 **On-Premise**: Data stays in-house - no cloud dependency
+- ⚡ **Power Optimized**: Compiled for POWER9+ (runs on POWER9, POWER10, POWER11)
 
 ## Quick Start
 
@@ -51,22 +51,25 @@ cd docling
 
 | Platform | Status | Notes |
 |----------|--------|-------|
-| AIX 7.3+ | Supported | IBM Power, requires AIX Toolbox |
-| Ubuntu 22.04+ | Supported | x86_64 and ppc64le |
-| RHEL 9+ | Planned | Coming soon |
-| macOS | Dev only | For development/testing |
+| AIX 7.3+ | ✅ Supported | POWER9, POWER10, POWER11 |
+| Ubuntu 22.04+ | ✅ Supported | ppc64le (Little Endian) |
 
 ## Installation Options
 
 ```bash
-./install.sh              # Full installation
+./install.sh              # Full installation (auto-detects processor)
+./install.sh --power9     # Force POWER9 wheels (compatible with P9/P10/P11)
+./install.sh --power10    # Use POWER10 wheels (MMA enabled, P10/P11 only)
 ./install.sh --deps-only  # System dependencies only
 ./install.sh --python-only # Python packages only
+./install.sh --wheels-only # Install pre-built wheels only
 ./install.sh --verify     # Verify installation
 ./install.sh --demo       # Run demonstration
 ./install.sh --platform   # Show detected platform
 ./install.sh --help       # Show help
 ```
+
+The installer auto-detects your processor and selects the appropriate optimized wheels.
 
 ## Usage
 
@@ -133,16 +136,16 @@ These wheels are compiled with `-mcpu=power9` which provides:
 
 POWER10/11 systems will run these binaries but won't utilize MMA (Matrix Math Accelerator). Future releases may include `-mcpu=power10` wheels for maximum P10/P11 performance.
 
-## Benchmarks (AIX vs Ubuntu ppc64le)
+## Benchmarks
 
-| Test | AIX 7.3 | Ubuntu 22.04 | Winner |
-|------|---------|--------------|--------|
-| PDF Parsing (pages/sec) | 6.04 | 4.56 | **AIX 1.32x** |
-| Multiprocessing 32w | 19.41 files/s | 4.34 files/s | **AIX 4.47x** |
-| VectorDB Query | 2583 qps | 2919 qps | Ubuntu 1.13x |
-| NumPy MatMul 12t | 167 GFLOPS | 216 GFLOPS | Ubuntu 1.29x |
+Performance comparison on **POWER9** (same hardware, 12 threads):
 
-AIX excels at PDF processing and multiprocessing workloads.
+| Test | AIX 7.3 | Ubuntu 22.04 ppc64le | Notes |
+|------|---------|----------------------|-------|
+| PDF Parsing | 6.04 pages/s | 4.56 pages/s | AIX 1.32x faster |
+| Multiprocessing (32 workers) | 19.41 files/s | 4.34 files/s | AIX 4.47x faster |
+
+*Benchmark conditions: POWER9, 12 threads, same LPAR configuration. AIX demonstrates superior multiprocessing and I/O performance for document processing workloads.*
 
 ## Project Structure
 

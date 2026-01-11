@@ -14,6 +14,32 @@ PYTHON="${INSTALL_PREFIX}/bin/python3.12"
 PIP="${INSTALL_PREFIX}/bin/pip3.12"
 DNF="${INSTALL_PREFIX}/bin/dnf"
 
+# Detect processor and set wheel directory
+detect_power_level() {
+    PROC_TYPE=$(prtconf 2>/dev/null | grep 'Processor Type' | cut -d: -f2 | xargs)
+
+    case "${PROC_TYPE}" in
+        *POWER11*|*Power11*)
+            DETECTED_POWER="power10"  # P11 uses P10 wheels (MMA support)
+            ;;
+        *POWER10*|*Power10*)
+            DETECTED_POWER="power10"
+            ;;
+        *POWER9*|*Power9*)
+            DETECTED_POWER="power9"
+            ;;
+        *)
+            DETECTED_POWER="power9"  # Default to P9 (most compatible)
+            ;;
+    esac
+
+    # Allow override via environment or argument
+    POWER_LEVEL="${POWER_LEVEL:-${DETECTED_POWER}}"
+}
+
+# Set wheels directory based on power level
+WHEELS_DIR="${REPO_ROOT}/wheels/aix"
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -27,12 +53,68 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 print_platform_info() {
+    detect_power_level
     echo "Platform Details:"
     echo "  OS: AIX $(oslevel)"
     echo "  Arch: $(uname -p)"
     echo "  Processor: $(prtconf | grep 'Processor Type' | cut -d: -f2 | xargs)"
+    echo "  Power Level: ${POWER_LEVEL} (wheels optimized for this architecture)"
     echo "  Install prefix: ${INSTALL_PREFIX}"
     echo ""
+}
+
+install_optimized_wheels() {
+    log_info "Installing pre-built wheels for ${POWER_LEVEL}..."
+
+    # Determine which wheel directory to use
+    if [[ "${POWER_LEVEL}" == "power10" && -d "${WHEELS_DIR}/power10" ]]; then
+        WHEEL_PATH="${WHEELS_DIR}/power10"
+        log_info "Using POWER10 optimized wheels (MMA enabled)"
+        USE_P10=true
+    else
+        WHEEL_PATH="${WHEELS_DIR}"
+        log_info "Using POWER9+ wheels (compatible with P9/P10/P11)"
+        USE_P10=false
+    fi
+
+    # Install OpenBLAS library
+    if [[ -f "${WHEEL_PATH}/libopenblas_power9p-r0.3.28.so" ]]; then
+        log_info "Installing OpenBLAS library..."
+        mkdir -p "${INSTALL_PREFIX}/lib64"
+        cp "${WHEEL_PATH}/libopenblas_power9p-r0.3.28.so" "${INSTALL_PREFIX}/lib64/"
+        ln -sf "${INSTALL_PREFIX}/lib64/libopenblas_power9p-r0.3.28.so" "${INSTALL_PREFIX}/lib64/libopenblas.so"
+        ln -sf "${INSTALL_PREFIX}/lib64/libopenblas_power9p-r0.3.28.so" "${INSTALL_PREFIX}/lib64/libopenblas.so.0"
+        log_success "OpenBLAS installed"
+    fi
+
+    # Install wheels
+    WHEEL_FAILED=false
+    for wheel in "${WHEEL_PATH}"/*.whl; do
+        if [[ -f "$wheel" ]]; then
+            pkg_name=$(basename "$wheel" | cut -d'-' -f1)
+            log_info "Installing ${pkg_name}..."
+            if ! ${PIP} install --force-reinstall "$wheel" 2>/dev/null; then
+                log_warn "Failed: ${pkg_name}"
+                WHEEL_FAILED=true
+            fi
+        fi
+    done
+
+    # Fallback to POWER9 wheels if POWER10 failed
+    if [[ "${USE_P10}" == "true" && "${WHEEL_FAILED}" == "true" ]]; then
+        log_warn "POWER10 wheels failed. Falling back to POWER9 wheels..."
+        WHEEL_PATH="${WHEELS_DIR}"
+        for wheel in "${WHEEL_PATH}"/*.whl; do
+            if [[ -f "$wheel" ]]; then
+                pkg_name=$(basename "$wheel" | cut -d'-' -f1)
+                log_info "Installing ${pkg_name} (POWER9 fallback)..."
+                ${PIP} install --force-reinstall "$wheel" || log_warn "Failed: ${pkg_name}"
+            fi
+        done
+        log_success "Fallback to POWER9 wheels completed"
+    else
+        log_success "Optimized wheels installed"
+    fi
 }
 
 check_prerequisites() {
@@ -328,6 +410,18 @@ show_completion() {
 
 # Main
 main() {
+    # Handle power level override first
+    for arg in "$@"; do
+        case "$arg" in
+            --power9)
+                export POWER_LEVEL="power9"
+                ;;
+            --power10|--power11)
+                export POWER_LEVEL="power10"
+                ;;
+        esac
+    done
+
     print_platform_info
 
     case "${1:-}" in
@@ -339,6 +433,9 @@ main() {
             install_python_packages
             install_docling_parse
             ;;
+        --wheels-only)
+            install_optimized_wheels
+            ;;
         --patch-only)
             patch_tokenizers
             install_shims
@@ -349,10 +446,24 @@ main() {
         --demo)
             run_demo
             ;;
-        *)
-            # Full installation
+        --power9|--power10|--power11)
+            # Full installation with specified power level
             check_prerequisites
             install_system_deps
+            install_optimized_wheels
+            install_python_packages
+            install_docling_parse
+            patch_tokenizers
+            install_shims
+            verify_installation
+            run_demo
+            show_completion
+            ;;
+        *)
+            # Full installation (auto-detect power level)
+            check_prerequisites
+            install_system_deps
+            install_optimized_wheels
             install_python_packages
             install_docling_parse
             patch_tokenizers
