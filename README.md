@@ -248,11 +248,13 @@ GPL-3.0 - See LICENSE file
 
 ## Credits
 
+**Developed by [SIXE](https://sixe.eu)** as part of the [LibrePower](https://librepower.org) initiative.
+
+### Technologies
 - [IBM Docling](https://github.com/DS4SD/docling) - Document AI framework
 - [IBM pyeco](https://github.com/ppc64le/pyeco) - Optimized Python packages for POWER
 - [HuggingFace](https://huggingface.co/) - Tokenizers and Transformers
 - [OpenBLAS](https://github.com/OpenMathLib/OpenBLAS) - BLAS library
-- LibrePower Community
 
 ---
 
