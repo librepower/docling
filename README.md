@@ -2,7 +2,7 @@
 
 **LibrePower - Unlocking Power Systems through open source. Unmatched RAS and TCO. Minimal footprint.**
 
-Document AI for AIX, IBM i, and Linux on Power - powered by IBM's Docling framework.
+Document AI for AIX and Linux on Power - powered by IBM's Docling framework.
 
 > **Early Release**: These packages are provided as-is for testing and evaluation. While we use them in production, bugs may exist.
 
