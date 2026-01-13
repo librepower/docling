@@ -1,6 +1,6 @@
 # LibrePower Docling
 
-**LibrePower - Unlocking Power Systems through open source. Unmatched RAS and TCO. Minimal footprint.**
+**LibrePower - Unlocking Power Systems through open source. Unmatched RAS and TCO. Minimal footprint 🌍**
 
 Document AI for AIX and Linux on Power - powered by IBM's Docling framework.
 
@@ -176,14 +176,16 @@ If POWER10 wheels fail to install, the installer automatically falls back to POW
 
 ## Benchmarks
 
-Performance comparison on **POWER9** (same hardware, 12 threads):
+Performance comparison on **POWER9** (same physical hardware, same LPAR config):
 
 | Test | AIX 7.3 | Ubuntu 22.04 ppc64le | Notes |
 |------|---------|----------------------|-------|
 | PDF Parsing | 6.04 pages/s | 4.56 pages/s | AIX 1.32x faster |
 | Multiprocessing (32 workers) | 19.41 files/s | 4.34 files/s | AIX 4.47x faster |
 
-*Benchmark conditions: POWER9, 12 threads, same LPAR configuration. AIX demonstrates superior multiprocessing and I/O performance for document processing workloads.*
+> **Important:** These benchmarks measure end-to-end workload performance, not raw CPU compute. Differences are likely due to OS scheduling, I/O subsystem (JFS2 vs ext4), and Python multiprocessing behavior - not CPU performance. Both use custom POWER9-optimized OpenBLAS.
+
+📖 **[Full benchmark methodology](docs/BENCHMARKS.md)** - Detailed test environment, reproduction steps, and caveats.
 
 ## Project Structure
 
